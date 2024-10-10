@@ -11,7 +11,6 @@ def add_constant(X):
 def calculate_standard_errors(
     X, y, weights, bias, is_logit=False, sample_weight=None
 ):
-    n_samples = X.shape[0]
     X_with_intercept = add_constant(X)
 
     if is_logit:
