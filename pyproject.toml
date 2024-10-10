@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "statsmodels_sgd"
+version = "0.0.1"
+description = "A package to emulate statsmodels functionality using stochastic gradient descent."
+readme = "README.md"
+authors = [
+    {name = "PolicyEngine", email = "hello@policyengine.org"},
+]
+license = {file = "LICENSE"}
+requires-python = ">=3.12"
+dependencies = [
+    "torch",
+    "numpy",
+    "pandas",
+    "scipy"
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "pytest",
+]
+
+[tool.setuptools]
+packages = ["statsmodels_sgd"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"policyengine_us_data" = ["**/*"]
+
+[tool.pytest.ini_options]
+addopts = "-v"
+testpaths = [
+    "tests",
+]
+
+[tool.black]
+line-length = 79
+target-version = ['py311']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | build
+  | dist
+)/
+'''
