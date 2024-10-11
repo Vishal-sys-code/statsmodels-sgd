@@ -2,5 +2,6 @@ format: jb-book
 root: index
 chapters:
   - file: installation
-  - file: ols_example
-  - file: logit_example
+  - file: ols-example
+  - file: logit-example
+  - file
