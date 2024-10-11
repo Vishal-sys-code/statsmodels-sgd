@@ -1,6 +1,6 @@
-# CPS ASEC Multiple Regression Analysis
+# CPS ASEC Analysis using SGD-based OLS with Gradient Clipping
 
-This notebook demonstrates how to download the CPS ASEC microdata and perform a multiple regression analysis using the person-level file.
+This notebook demonstrates how to use our statsmodels-like SGD implementation with gradient clipping to analyze CPS ASEC microdata.
 
 ## Setup and Data Download
 
@@ -9,14 +9,11 @@ First, let's set up our environment and download the necessary data:
 ```python
 import pandas as pd
 import numpy as np
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
 import requests
 import zipfile
 import io
 import os
+from statsmodels_sgd import OLS  # Our custom implementation
 
 # URL for the CPS ASEC microdata
 url = "https://www2.census.gov/programs-surveys/cps/datasets/2024/march/asecpub24csv.zip"
@@ -57,47 +54,37 @@ df['educ_category'] = pd.cut(df['A_HGA'],
                              bins=[0, 38, 39, 42, 100],
                              labels=['Less than HS', 'HS grad', 'Some college', 'Bachelor\'s or higher'])
 
+# Create dummy variables
+df = pd.get_dummies(df, columns=['educ_category', 'A_SEX'], drop_first=True)
+
 print("Data preparation complete.")
 ```
 
-## Regression Analysis
+## SGD-based OLS Regression Analysis
 
-Now we'll set up and run our regression model:
+Now we'll use our custom SGD-based OLS implementation:
 
 ```python
-# Set up the regression model
-X = df[['A_AGE', 'A_SEX', 'educ_category']]
+# Prepare the data for our model
+X = df[['A_AGE', 'A_SEX_2', 'educ_category_HS grad',
+        'educ_category_Some college', 'educ_category_Bachelor\'s or higher']]
 y = df['PEARNVAL']
 
-# Create a pipeline with preprocessing and regression
-preprocessor = ColumnTransformer(
-    transformers=[
-        ('num', 'passthrough', ['A_AGE']),
-        ('cat', OneHotEncoder(drop='first', sparse=False), ['A_SEX', 'educ_category'])
-    ])
+# Add constant term
+X = sm.add_constant(X)
 
-model = Pipeline([
-    ('preprocessor', preprocessor),
-    ('regressor', LinearRegression())
-])
-
-# Fit the model
-print("Fitting regression model...")
+# Initialize and fit our model
+# Note: Adjust hyperparameters as needed
+model = OLS(n_features=X.shape[1], learning_rate=0.01, epochs=1000,
+            batch_size=1000, clip_value=1.0)
 model.fit(X, y)
 
-# Print the coefficients
-feature_names = ['Age', 'Sex_Female'] + [f'Educ_{cat}' for cat in ['HS grad', 'Some college', 'Bachelor\'s or higher']]
-coefficients = model.named_steps['regressor'].coef_
-
-print("\nRegression Coefficients:")
-for name, coef in zip(feature_names, coefficients):
-    print(f"{name}: {coef:.2f}")
-
-# Print the intercept
-print(f"\nIntercept: {model.named_steps['regressor'].intercept_:.2f}")
+# Print the summary
+print(model.summary())
 
 # Calculate R-squared
-r_squared = model.score(X, y)
+y_pred = model.predict(X)
+r_squared = 1 - np.sum((y - y_pred)**2) / np.sum((y - np.mean(y))**2)
 print(f"\nR-squared: {r_squared:.4f}")
 ```
 
@@ -110,7 +97,23 @@ The output of this regression model tells us:
 3. How different levels of education are associated with earnings, compared to having less than a high school education.
 4. The overall fit of the model (R-squared).
 
-Remember that this is a simplified model and doesn't account for many other factors that could influence earnings. It's meant as a demonstration of how to work with CPS ASEC data rather than a comprehensive analysis of earnings determinants.
+Note that this SGD-based implementation may produce slightly different results compared to traditional OLS due to its iterative nature and the use of gradient clipping. The advantage is that it can handle larger datasets more efficiently and provides some level of differential privacy through gradient clipping.
+
+## Comparison with Traditional OLS
+
+To see how our SGD-based implementation compares with traditional OLS, let's run the same analysis using statsmodels:
+
+```python
+import statsmodels.api as sm
+
+# Fit traditional OLS model
+ols_model = sm.OLS(y, X).fit()
+
+# Print summary
+print(ols_model.summary())
+```
+
+Compare the coefficients, standard errors, and R-squared values between the two methods. The SGD-based method should provide similar results, but with the added benefits of scalability and privacy preservation.
 
 ## Cleanup
 
@@ -122,4 +125,4 @@ os.remove("pppub24.csv")
 print("Cleanup complete.")
 ```
 
-This notebook provides a complete, reproducible example of downloading CPS ASEC microdata and performing a multiple regression analysis. It can be easily incorporated into a Jupyter Book or CI pipeline as part of a larger package.
+This notebook provides a complete, reproducible example of downloading CPS ASEC microdata and performing a regression analysis using our custom SGD-based OLS implementation with gradient clipping. It demonstrates how to use this method with real-world data and compares it to traditional OLS.

@@ -1,4 +1,3 @@
-import torch
 import torch.nn as nn
 import torch.optim as optim
 import numpy as np
@@ -7,6 +6,27 @@ from .tools import (
     calculate_standard_errors,
     calculate_t_p_values,
 )
+
+import sys
+
+print(f"Python executable: {sys.executable}")
+print(f"Python version: {sys.version}")
+print(f"Python path: {sys.path}")
+
+try:
+    import torch
+
+    print(f"PyTorch version: {torch.__version__}")
+    print(f"PyTorch installation path: {torch.__file__}")
+except ImportError as e:
+    print(f"Error importing torch: {e}")
+    print("Installed packages:")
+    import subprocess
+
+    result = subprocess.run(
+        [sys.executable, "-m", "pip", "list"], capture_output=True, text=True
+    )
+    print(result.stdout)
 
 
 class BaseModel(nn.Module):
