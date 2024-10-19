@@ -1,0 +1,58 @@
+[project]
+name = "statsmodels-sgd"
+version = "0.1.0"
+description = "A statsmodels-like package using SGD with gradient clipping for differential privacy"
+authors = [{name = "Max Ghenis", email = "max@policyengine.org"}]
+license = {file = "LICENSE"}
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "numpy",
+    "pandas",
+    "statsmodels",
+    "torch",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "black",
+    "isort",
+    "flake8",
+]
+
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["statsmodels_sgd"]
+
+[tool.poetry]
+name = "statsmodels-sgd"
+version = "0.1.0"
+description = "A statsmodels-like package using SGD with gradient clipping for differential privacy"
+authors = [{name = "Max Ghenis", email = "max@policyengine.org"}]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "statsmodels_sgd"}]
+
+[tool.poetry.dependencies]
+python = ">=3.8"
+numpy = "*"
+pandas = "*"
+statsmodels = "*"
+torch = "*"
+
+[tool.poetry.dev-dependencies]
+pytest = "*"
+pytest-cov = "*"
+black = "*"
+isort = "*"
+flake8 = "*"
