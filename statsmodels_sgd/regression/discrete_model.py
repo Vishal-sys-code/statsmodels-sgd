@@ -10,13 +10,13 @@ class Logit(nn.Module):
     def __init__(
         self,
         n_features,
-        learning_rate=0.01,
-        epochs=1000,
+        learning_rate=0.1,
+        epochs=2000,
         batch_size=32,
-        clip_value=1.0,
+        clip_value=5.0,
     ):
         super().__init__()
-        self.linear = nn.Linear(n_features, 1, bias=False)  # Remove bias here
+        self.linear = nn.Linear(n_features, 1, bias=False)
         self.learning_rate = learning_rate
         self.epochs = epochs
         self.batch_size = batch_size
@@ -40,34 +40,63 @@ class Logit(nn.Module):
                 sample_weight, dtype=torch.float32
             ).reshape(-1, 1)
 
-        self.linear = nn.Linear(
-            X.shape[1], 1, bias=False
-        )  # Reinitialize without bias
-        optimizer = optim.SGD(self.parameters(), lr=self.learning_rate)
+        # Correct initialization of weights
+        self.linear = nn.Linear(X.shape[1], 1, bias=False)
+        init_weights = torch.zeros(
+            1, X.shape[1]
+        )  # Changed shape from (X.shape[1], 1)
+        self.linear.weight = nn.Parameter(init_weights)
 
-        for _ in range(self.epochs):
+        optimizer = optim.Adam(self.parameters(), lr=self.learning_rate)
+        scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+            optimizer, mode="min", factor=0.5, patience=50, verbose=False
+        )
+
+        prev_loss = float("inf")
+        patience_counter = 0
+        best_weights = None
+        min_loss = float("inf")
+
+        for epoch in range(self.epochs):
             optimizer.zero_grad()
             y_pred = self(X)
             loss = self.weighted_binary_cross_entropy(y_pred, y, sample_weight)
+
+            if loss.item() < min_loss:
+                min_loss = loss.item()
+                best_weights = self.linear.weight.clone().detach()
+
             loss.backward()
             torch.nn.utils.clip_grad_value_(self.parameters(), self.clip_value)
             optimizer.step()
+            scheduler.step(loss)
 
-        # Store results
-        with torch.no_grad():
-            self.results_ = {"coef": self.linear.weight.numpy().flatten()}
+            if abs(loss.item() - prev_loss) < 1e-6:
+                patience_counter += 1
+                if patience_counter >= 100:
+                    break
+            else:
+                patience_counter = 0
+            prev_loss = loss.item()
+
+        if best_weights is not None:
+            self.linear.weight.data = best_weights
+
+        self.results_ = {"coef": self.linear.weight.detach().numpy().flatten()}
 
     def weighted_binary_cross_entropy(self, y_pred, y_true, weights=None):
+        eps = 1e-7
+        y_pred = torch.clamp(y_pred, eps, 1 - eps)
         if weights is None:
-            return nn.BCELoss()(y_pred, y_true)
-        else:
-            return torch.mean(
-                weights
-                * -(
-                    y_true * torch.log(y_pred + 1e-8)
-                    + (1 - y_true) * torch.log(1 - y_pred + 1e-8)
-                )
+            weights = torch.ones_like(y_true)
+        loss = -(
+            weights
+            * (
+                y_true * torch.log(y_pred)
+                + (1 - y_true) * torch.log(1 - y_pred)
             )
+        ).mean()
+        return loss
 
     def predict(self, X):
         if self.add_constant:

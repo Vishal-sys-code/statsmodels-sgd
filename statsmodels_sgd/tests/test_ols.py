@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from statsmodels_sgd import OLS
+import statsmodels_sgd.api as sm_sgd
 import statsmodels.api as sm
 
 
@@ -16,7 +16,7 @@ def sample_data():
 
 def test_ols_fit_predict_with_weights(sample_data):
     X, y, sample_weight = sample_data
-    model = OLS(n_features=X.shape[1] + 1)  # +1 for the constant term
+    model = sm_sgd.OLS(n_features=X.shape[1] + 1)  # +1 for the constant term
     model.fit(X, y, sample_weight=sample_weight)
 
     # Check predictions
@@ -31,7 +31,9 @@ def test_ols_vs_statsmodels_with_weights(sample_data):
     X, y, sample_weight = sample_data
 
     # Fit our model
-    our_model = OLS(n_features=X.shape[1] + 1)  # +1 for the constant term
+    our_model = sm_sgd.OLS(
+        n_features=X.shape[1] + 1
+    )  # +1 for the constant term
     our_model.fit(X, y, sample_weight=sample_weight)
 
     # Fit statsmodels OLS

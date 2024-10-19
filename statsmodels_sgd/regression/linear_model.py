@@ -6,6 +6,10 @@ import statsmodels.api as sm
 
 
 class OLS(nn.Module):
+    """
+    Ordinary Least Squares with SGD
+    """
+
     def __init__(
         self,
         n_features,

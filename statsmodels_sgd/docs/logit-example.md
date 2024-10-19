@@ -5,7 +5,7 @@ This example demonstrates how to use the Logit model from the Statsmodels-SGD pa
 ```python
 import numpy as np
 import matplotlib.pyplot as plt
-from statsmodels_sgd import Logit
+import statsmodels_sgd.api as sm_sgd
 import statsmodels.api as sm
 from sklearn.metrics import roc_curve, auc
 
@@ -20,7 +20,7 @@ y = (1 / (1 + np.exp(-z)) >= 0.5).astype(int)
 sample_weight = np.random.uniform(0.5, 1.5, size=1000)
 
 # Fit our Logit model
-our_model = Logit(n_features=X.shape[1]+1)
+our_model = sm_sgd.Logit(n_features=X.shape[1] + 1)
 our_model.fit(X, y, sample_weight=sample_weight)
 print("Our Logit Model Summary:")
 print(our_model.summary())

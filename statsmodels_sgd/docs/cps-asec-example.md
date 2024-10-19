@@ -13,7 +13,7 @@ import requests
 import zipfile
 import io
 import os
-from statsmodels_sgd import OLS  # Our custom implementation
+import statsmodels_sgd.api as sm_sgd
 
 # URL for the CPS ASEC microdata
 url = "https://www2.census.gov/programs-surveys/cps/datasets/2024/march/asecpub24csv.zip"
@@ -75,8 +75,9 @@ X = sm.add_constant(X)
 
 # Initialize and fit our model
 # Note: Adjust hyperparameters as needed
-model = OLS(n_features=X.shape[1], learning_rate=0.01, epochs=1000,
-            batch_size=1000, clip_value=1.0)
+model = sm_sgd.OLS(
+    n_features=X.shape[1], learning_rate=0.01, epochs=1000, batch_size=1000, clip_value=1.0
+)
 model.fit(X, y)
 
 # Print the summary

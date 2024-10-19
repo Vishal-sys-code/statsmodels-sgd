@@ -1,2 +1,2 @@
-from .ols import OLS
-from .logit import Logit
+from . import api
+from . import regression
